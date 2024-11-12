@@ -11,6 +11,9 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
+    @State private var text: String = "stuff"
+    @State private var running: Bool = false
+    @State private var epoch: Double = 0
 
     var body: some View {
         NavigationSplitView {
@@ -27,13 +30,48 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
             .toolbar {
                 ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button(action: {  }) {
+                        Label("Build", systemImage: "wrench.and.screwdriver.fill")
                     }
                 }
             }
         } detail: {
-            Text("Select an item")
+            HStack {
+                TextEditor(text: $text)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
+                    .font(.body)
+                VStack {
+                    TextEditor(text: $text)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        )
+                        .font(.body)
+                    HStack {
+                        Button {
+                            print("reset")
+                            epoch = 0
+                        } label: {
+                            Image(systemName: "backward.end.fill")
+                        }
+                        .buttonStyle(.accessoryBar)
+                        .controlSize(.large)
+                        .help("Reset")
+                        Button {
+                            running.toggle()
+                        } label: {
+                            Image(systemName: running ? "pause.fill" :"play.fill")
+                        }
+                        .buttonStyle(.accessoryBar)
+                        .controlSize(.large)
+                        .help(running ? "Pause" : "Play")
+                        Text(epoch.description)
+                    }.padding(.vertical, 5)
+                }
+            }
         }
     }
 
@@ -51,9 +89,4 @@ struct ContentView: View {
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
