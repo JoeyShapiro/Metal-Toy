@@ -29,7 +29,9 @@ class Renderer: NSObject {
     ]
     var vertexBuffer: MTLBuffer?
     
-    init(device: MTLDevice) {
+    init(device: MTLDevice, source: String) {
+        self.source = source
+        
         // fatal seems harsh, but better than doing nothing at all
         guard let commandQueue = device.makeCommandQueue() else { fatalError("Failed to create command queue") }
         
@@ -54,7 +56,7 @@ class Renderer: NSObject {
         
         do {
             // Create the render pipeline
-            let library = try device.makeLibrary(source: source, options: .none)
+            let library = try device.makeLibrary(source: self.source, options: .none)
             
             let vertexFunction = library.makeFunction(name: "vertexShader")
             let fragmentFunction = try library.makeFunction(name: "fragmentShader", constantValues: constantValues)
@@ -90,9 +92,8 @@ class Renderer: NSObject {
         memcpy(uniformsBuffer.contents(), &uniforms, MemoryLayout<Uniforms>.stride)
     }
     
-    func update(source: String) {
+    func update() {
         print("source (\(source.count))")
-        self.source = source
         self.dirty = true
     }
     

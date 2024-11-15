@@ -41,9 +41,11 @@ struct MetalView: NSViewRepresentable {
     
     class Coordinator: NSObject, MTKViewDelegate {
         var renderer: Renderer
+        let device: MTLDevice
         
         init(device: MTLDevice) {
-            renderer = Renderer(device: device)
+            self.device = device
+            renderer = Renderer(device: self.device, source: "")
             
 //            super.init()
         }
@@ -53,7 +55,9 @@ struct MetalView: NSViewRepresentable {
         }
         
         func update(source: String) {
-            renderer.update(source: source)
+//            renderer.update()
+            
+            renderer = Renderer(device: self.device, source: source)
         }
         
         func draw(in view: MTKView) {
