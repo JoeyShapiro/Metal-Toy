@@ -29,7 +29,56 @@ class Renderer: NSObject {
     ]
     var vertexBuffer: MTLBuffer?
     
-    init(device: MTLDevice, source: String) {
+    init(device: MTLDevice) {
+        self.source = ""
+        
+        // fatal seems harsh, but better than doing nothing at all
+        guard let commandQueue = device.makeCommandQueue() else { fatalError("Failed to create command queue") }
+        
+        self.device = device
+        self.commandQueue = commandQueue
+        
+        // dummy values i guess idk
+        uniforms = Uniforms(resolution: SIMD2<Float>(Float(1),
+                                                     Float(1)),
+                            scale: SIMD2<Float>(Float(1),
+                                                Float(1)))
+        uniformsBuffer = device.makeBuffer(bytes: &uniforms,
+                                           length: MemoryLayout<Uniforms>.stride,
+                                           options: [])!
+        // Set up function constants for player position
+        let constantValues = MTLFunctionConstantValues()
+        var useConstants = true
+        constantValues.setConstantValue(&useConstants, type: .bool, index: 0)
+        
+        let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+        
+        do {
+            // Create the render pipeline
+            let library = device.makeDefaultLibrary()!
+            
+            let vertexFunction = library.makeFunction(name: "vertexShader")
+            let fragmentFunction = try library.makeFunction(name: "fragmentShader", constantValues: constantValues)
+            
+            pipelineDescriptor.vertexFunction = vertexFunction
+            pipelineDescriptor.fragmentFunction = fragmentFunction
+        } catch {
+            fatalError("Unable to create metal library: \(error)")
+        }
+        
+        do {
+            pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        } catch {
+            fatalError("Unable to create render pipeline state: \(error)")
+        }
+        
+        super.init()
+        
+        vertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: [])
+    }
+    
+    init(device: MTLDevice, source: String) throws {
         self.source = source
         
         // fatal seems harsh, but better than doing nothing at all
@@ -64,15 +113,10 @@ class Renderer: NSObject {
             pipelineDescriptor.vertexFunction = vertexFunction
             pipelineDescriptor.fragmentFunction = fragmentFunction
         } catch {
-            print("Unable to create metal library: \(error)")
-            
-            let library = device.makeDefaultLibrary()!
-            
-            let vertexFunction = library.makeFunction(name: "vertexShader")
-            let fragmentFunction = try! library.makeFunction(name: "fragmentShader", constantValues: constantValues)
-            
-            pipelineDescriptor.vertexFunction = vertexFunction
-            pipelineDescriptor.fragmentFunction = fragmentFunction
+            // dont want to create default. would get confusing. just dont want it to break or crash
+            // do want default on first go though. this seems like good idea
+//            print("Unable to create metal library: \(error)")
+            throw error
         }
         
         do {
@@ -93,7 +137,6 @@ class Renderer: NSObject {
     }
     
     func update() {
-        print("source (\(source.count))")
         self.dirty = true
     }
     

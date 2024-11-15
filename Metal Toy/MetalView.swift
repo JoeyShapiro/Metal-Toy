@@ -45,7 +45,9 @@ struct MetalView: NSViewRepresentable {
         
         init(device: MTLDevice) {
             self.device = device
-            renderer = Renderer(device: self.device, source: "")
+            
+            // use a default renderer. we need _something_
+            renderer = Renderer(device: self.device)
             
 //            super.init()
         }
@@ -57,7 +59,11 @@ struct MetalView: NSViewRepresentable {
         func update(source: String) {
 //            renderer.update()
             
-            renderer = Renderer(device: self.device, source: source)
+            do {
+                renderer = try Renderer(device: self.device, source: source)
+            } catch {
+                
+            }
         }
         
         func draw(in view: MTKView) {
