@@ -14,6 +14,10 @@ struct Metal_ToyApp: App {
     @State private var running: Bool = false
     @State private var epoch: Double = 0
     @Query private var items: [Item]
+    @State private var selectedRange: NSRange?
+    @State private var lineNumbers: [Int] = []
+    private let font = Font.system(.body, design: .monospaced)
+    @State private var highlightedText: NSAttributedString = NSAttributedString()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -50,11 +54,34 @@ struct Metal_ToyApp: App {
             } detail: {
                 HStack {
                     TextEditor(text: $text)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                        )
-                        .font(.body)
+                        .font(font)
+                        .onChange(of: text) { newValue in
+                            updateLineNumbers()
+                            highlightSyntax()
+                        }
+                        .onAppear {
+                            updateLineNumbers()
+                            highlightSyntax()
+                        }
+                    ScrollView {
+                        // Line numbers
+//                        VStack(alignment: .trailing) {
+//                            ForEach(lineNumbers, id: \.self) { number in
+//                                Text("\(number)")
+//                                    .font(font)
+//                                    .foregroundColor(.gray)
+//                                    .padding(.horizontal, 8)
+//                            }
+//                        }
+//                        
+//                        // Text editor with syntax highlighting
+                        
+                        Text(AttributedString(highlightedText))
+                            .textSelection(.enabled)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                    }
                     VStack {
                         MetalView(source: $text)
                         HStack {
@@ -83,6 +110,37 @@ struct Metal_ToyApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
+    
+    private func updateLineNumbers() {
+        let lines = text.components(separatedBy: .newlines)
+        lineNumbers = Array(1...max(1, lines.count))
+    }
+    
+    private func highlightSyntax() {
+        let formatted = text.split(separator: "\n")
+            .enumerated()
+            .map { (i, e) in
+                "\(i + 1). \(e)"
+            }
+            .joined(separator: "\n")
+        
+        let attributedString = NSMutableAttributedString(string: formatted)
+        
+        // Swift keywords
+        let keywords = "class|struct|enum|func|var|let|if|else|guard|return|while|for|in|switch|case|break|continue|default"
+        attributedString.highlight(pattern: "\\b(\(keywords))\\b", with: .systemPink)
+        
+        // String literals
+        attributedString.highlight(pattern: "\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"", with: .systemRed)
+        
+        // Numbers
+        attributedString.highlight(pattern: "\\b\\d+\\.?\\d*\\b", with: .systemOrange)
+        
+        // Comments
+        attributedString.highlight(pattern: "//.*$", with: .systemGreen)
+        
+        highlightedText = attributedString
+    }
 }
 
 extension Bundle {
@@ -91,5 +149,18 @@ extension Bundle {
             return nil
         }
         return try? String(contentsOfFile: path, encoding: .utf8)
+    }
+}
+
+// Syntax highlighting support
+extension NSMutableAttributedString {
+    func highlight(pattern: String, with color: NSColor) {
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(location: 0, length: self.length)
+        regex?.enumerateMatches(in: self.string, range: range) { match, _, _ in
+            if let matchRange = match?.range {
+                self.addAttribute(.foregroundColor, value: color, range: matchRange)
+            }
+        }
     }
 }
