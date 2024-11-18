@@ -144,7 +144,8 @@ struct Metal_ToyApp: App {
             }
             .focusable()
             .focused($focused)
-            .focusEffectDisabled().onKeyPress { key in
+            .focusEffectDisabled()
+            .onKeyPress { key in
                 print(key.debugDescription.debugDescription)
                 var c = key.characters.first?.description ?? ""
                 c = c.replacingOccurrences(of: "\r", with: "\n")
@@ -158,11 +159,12 @@ struct Metal_ToyApp: App {
     
     private func format() {
         // Get the total number of lines to determine padding width
-        let totalLines = text.split(separator: "\n").count
+        // this bit me so many times. not sure why, i thought bug
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         // Calculate the width needed for the largest line number
-        let n = String(totalLines).count
+        let n = String(lines.count).count
         
-        let formatted = text.split(separator: "\n")
+        let formatted = lines
             .enumerated()
             .map { (i, e) in
                 "\(String(format: "%\(n)d", i + 1)) \(e)"
