@@ -16,9 +16,10 @@ struct Metal_ToyApp: App {
     @Query private var items: [Item]
     @State private var selectedRange: NSRange?
     @State private var lineNumbers: [Int] = []
-    private let font = Font.system(.body, design: .monospaced)
+    private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
     @FocusState private var focused: Bool
     @State private var highlightedText: NSAttributedString = NSAttributedString()
+    @State private var cursor = CGPoint.zero
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -72,20 +73,46 @@ struct Metal_ToyApp: App {
                                 colorMode: .linear,
                                 rendersAsynchronously: false
                             ) { context, size in
-                                let path = Rectangle().path(in: CGRect(x: 0, y: size.height-50, width: 50, height: 50))
+                                // best way i can find
+                                // Getting exact metrics for a specific character
+                                let attributes = [NSAttributedString.Key.font: font]
+                                let charSize = ("J" as NSString).size(withAttributes: attributes)
+                                
+                                let path = Rectangle().path(in: CGRect(x: cursor.x, y: cursor.y, width: self.font.maximumAdvancement.width/4, height: charSize.height))
                                 context.fill(path, with: .color(.blue))
+                                
+//                                for x in 0...Int(size.width/self.font.maximumAdvancement.width) {
+//                                    for y in 0...Int(size.height/charSize.height) {
+//                                        let path = Rectangle().path(in: CGRect(x: CGFloat(x)*self.font.maximumAdvancement.width, y: CGFloat(y)*charSize.height, width: self.font.maximumAdvancement.width, height: charSize.height))
+//                                        context.stroke(path, with: .color(.red))
+//                                    }
+//                                }
                             }
+                            
                             Text(AttributedString(highlightedText))
-                                .textSelection(.enabled)
-                                .padding()
+//                                .textSelection(.enabled)
+                                .padding(0)
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
-                                .monospaced()
+                                .font(Font(font))
                                 .onAppear() {
                                     format()
                                 }
                                 .onChange(of: text) { newValue in
                                     format()
+                                }
+                                .onTapGesture { code in // includes scroll
+                                    cursor = code
+                                    
+                                    // Getting exact metrics for a specific character
+                                    let attributes = [NSAttributedString.Key.font: font]
+                                    let charSize = ("J" as NSString).size(withAttributes: attributes)
+                                    
+                                    // convert to character on grid
+                                    let col = (code.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
+                                    let row = (code.y / charSize.height).rounded(.down)
+                                    
+                                    cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
                                 }
                         }
                             
@@ -124,6 +151,7 @@ struct Metal_ToyApp: App {
                 self.text += c
                 return .handled
             }
+//            .frame(width: 1280, height: 720, alignment: .center)
         }
         .modelContainer(sharedModelContainer)
     }
