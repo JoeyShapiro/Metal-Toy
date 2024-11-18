@@ -17,6 +17,7 @@ struct Metal_ToyApp: App {
     @State private var selectedRange: NSRange?
     @State private var lineNumbers: [Int] = []
     private let font = Font.system(.body, design: .monospaced)
+    @FocusState private var focused: Bool
     @State private var highlightedText: NSAttributedString = NSAttributedString()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -53,16 +54,6 @@ struct Metal_ToyApp: App {
                 }
             } detail: {
                 HStack {
-                    TextEditor(text: $text)
-                        .font(font)
-                        .onChange(of: text) { newValue in
-                            updateLineNumbers()
-                            highlightSyntax()
-                        }
-                        .onAppear {
-                            updateLineNumbers()
-                            highlightSyntax()
-                        }
                     ScrollView {
                         // Line numbers
 //                        VStack(alignment: .trailing) {
@@ -75,12 +66,29 @@ struct Metal_ToyApp: App {
 //                        }
 //                        
 //                        // Text editor with syntax highlighting
-                        
-                        Text(AttributedString(highlightedText))
-                            .textSelection(.enabled)
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
+                        ZStack {
+                            Canvas(
+                                opaque: true,
+                                colorMode: .linear,
+                                rendersAsynchronously: false
+                            ) { context, size in
+                                let path = Rectangle().path(in: CGRect(x: 0, y: size.height-50, width: 50, height: 50))
+                                context.fill(path, with: .color(.blue))
+                            }
+                            Text(AttributedString(highlightedText))
+                                .textSelection(.enabled)
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(8)
+                                .monospaced()
+                                .onAppear() {
+                                    format()
+                                }
+                                .onChange(of: text) { newValue in
+                                    format()
+                                }
+                        }
+                            
                     }
                     VStack {
                         MetalView(source: $text)
@@ -107,34 +115,50 @@ struct Metal_ToyApp: App {
                     }
                 }
             }
+            .focusable()
+            .focused($focused)
+            .focusEffectDisabled().onKeyPress { key in
+                print(key.debugDescription.debugDescription)
+                var c = key.characters.first?.description ?? ""
+                c = c.replacingOccurrences(of: "\r", with: "\n")
+                self.text += c
+                return .handled
+            }
         }
         .modelContainer(sharedModelContainer)
     }
     
-    private func updateLineNumbers() {
-        let lines = text.components(separatedBy: .newlines)
-        lineNumbers = Array(1...max(1, lines.count))
-    }
-    
-    private func highlightSyntax() {
+    private func format() {
+        // Get the total number of lines to determine padding width
+        let totalLines = text.split(separator: "\n").count
+        // Calculate the width needed for the largest line number
+        let n = String(totalLines).count
+        
         let formatted = text.split(separator: "\n")
             .enumerated()
             .map { (i, e) in
-                "\(i + 1). \(e)"
+                "\(String(format: "%\(n)d", i + 1)) \(e)"
             }
             .joined(separator: "\n")
         
         let attributedString = NSMutableAttributedString(string: formatted)
         
-        // Swift keywords
-        let keywords = "class|struct|enum|func|var|let|if|else|guard|return|while|for|in|switch|case|break|continue|default"
+        // Metal keywords
+        var keywords = "using|namespace|struct|bool|constant|vertex|return"
         attributedString.highlight(pattern: "\\b(\(keywords))\\b", with: .systemPink)
+        
+        // Metal Processors
+        keywords = "include"
+        attributedString.highlight(pattern: "#(\(keywords))\\b", with: .systemOrange)
         
         // String literals
         attributedString.highlight(pattern: "\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"", with: .systemRed)
         
         // Numbers
-        attributedString.highlight(pattern: "\\b\\d+\\.?\\d*\\b", with: .systemOrange)
+        attributedString.highlight(pattern: "\\b\\d+\\.?\\d*\\b", with: .systemYellow)
+        
+        // line numbers
+        attributedString.highlight(pattern: "(^|\\n)\\s*\\d+", with: .systemGray)
         
         // Comments
         attributedString.highlight(pattern: "//.*$", with: .systemGreen)
