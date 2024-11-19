@@ -20,6 +20,7 @@ struct Metal_ToyApp: App {
     @FocusState private var focused: Bool
     @State private var highlightedText: NSAttributedString = NSAttributedString()
     @State private var cursor = CGPoint.zero
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -113,6 +114,15 @@ struct Metal_ToyApp: App {
                                     let row = (code.y / charSize.height).rounded(.down)
                                     
                                     cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
+                                    print(row, col)
+                                    
+                                    // get char at that pos
+                                    // doing 2d is needed because each row isnt full
+                                    let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
+                                    
+                                    let i = data.index(data.startIndex, offsetBy: Int(col))
+                                    let char = data[i]
+                                    print(char)
                                 }
                         }
                             
