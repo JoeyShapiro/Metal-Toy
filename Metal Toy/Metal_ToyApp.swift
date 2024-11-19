@@ -103,26 +103,29 @@ struct Metal_ToyApp: App {
                                     format()
                                 }
                                 .onTapGesture { code in // includes scroll
-                                    cursor = code
-                                    
                                     // Getting exact metrics for a specific character
                                     let attributes = [NSAttributedString.Key.font: font]
                                     let charSize = ("J" as NSString).size(withAttributes: attributes)
                                     
                                     // convert to character on grid
-                                    let col = (code.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
+                                    var col = (code.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
                                     let row = (code.y / charSize.height).rounded(.down)
-                                    
-                                    cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
-                                    print(row, col)
                                     
                                     // get char at that pos
                                     // doing 2d is needed because each row isnt full
                                     let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
                                     
-                                    let i = data.index(data.startIndex, offsetBy: Int(col))
-                                    let char = data[i]
-                                    print(char)
+                                    if data.count > Int(col) {
+                                        //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
+                                        let ugly_i = data.index(data.startIndex, offsetBy: Int(col))
+                                        let char = data[ugly_i]
+                                        print(char)
+                                    } else {
+                                        col = CGFloat(data.count)
+                                    }
+
+                                    
+                                    cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
                                 }
                         }
                             
