@@ -171,13 +171,19 @@ struct Metal_ToyApp: App {
                 let row = (cursor.y / charSize.height).rounded(.down)
                 
                 let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
+                // get the nth occurance of \n
+                var start = 0
+                for i in 0..<Int(row) {
+                    start += Int(highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[i].count) + 1 - 3
+                }
                 
-                let pos1d = Int(row*0+(col-3))
+                let pos1d = Int(CGFloat(start)+(col-3))
                 if data.count > Int(col) {
                     //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
                     // need to split it because i dont know the "row"
                     // or i could just keep splitting until i find it
                     text.insert(contentsOf: c, at: text.index(text.startIndex, offsetBy: pos1d))
+                    cursor.x += self.font.maximumAdvancement.width
                 } else {
                     col = CGFloat(data.count)
                 }
