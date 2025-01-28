@@ -99,7 +99,7 @@ struct Metal_ToyApp: App {
                                 .onAppear() {
                                     format()
                                 }
-                                .onChange(of: text) { newValue in
+                                .onChange(of: text) { old, new in
                                     format()
                                 }
                                 .onTapGesture { code in // includes scroll
@@ -162,7 +162,30 @@ struct Metal_ToyApp: App {
                 print(key.debugDescription.debugDescription)
                 var c = key.characters.first?.description ?? ""
                 c = c.replacingOccurrences(of: "\r", with: "\n")
-                self.text += c
+                
+                // TODO do only during change or something
+                let attributes = [NSAttributedString.Key.font: font]
+                let charSize = ("J" as NSString).size(withAttributes: attributes)
+                
+                var col = (cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
+                let row = (cursor.y / charSize.height).rounded(.down)
+                
+                let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
+                
+                let pos1d = Int(row*0+(col-3))
+                if data.count > Int(col) {
+                    //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
+                    // need to split it because i dont know the "row"
+                    // or i could just keep splitting until i find it
+                    text.insert(contentsOf: c, at: text.index(text.startIndex, offsetBy: pos1d))
+                } else {
+                    col = CGFloat(data.count)
+                }
+                
+//                cursor.offsetBy(dx: self.font.maximumAdvancement.width)
+                
+//                self.text += c
+                
                 return .handled
             }
 //            .frame(width: 1280, height: 720, alignment: .center)
