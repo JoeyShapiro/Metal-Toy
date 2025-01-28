@@ -115,11 +115,13 @@ struct Metal_ToyApp: App {
                                     // doing 2d is needed because each row isnt full
                                     let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
                                     
-                                    if data.count > Int(col) {
+                                    if data.count > Int(col) && Int(col) >= 3 {
                                         //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
                                         let ugly_i = data.index(data.startIndex, offsetBy: Int(col))
                                         let char = data[ugly_i]
                                         print(char)
+                                    } else if Int(col) < 3 {
+                                        col = 3
                                     } else {
                                         col = CGFloat(data.count)
                                     }
@@ -159,13 +161,33 @@ struct Metal_ToyApp: App {
             .focused($focused)
             .focusEffectDisabled()
             .onKeyPress { key in
-                print(key.debugDescription.debugDescription)
-                var c = key.characters.first?.description ?? ""
-                c = c.replacingOccurrences(of: "\r", with: "\n")
+                print(key.debugDescription)
+                var c = key.characters.first ?? Character("")
+                if c == "\r" {
+                    c = "\n"
+                }
                 
                 // TODO do only during change or something
                 let attributes = [NSAttributedString.Key.font: font]
                 let charSize = ("J" as NSString).size(withAttributes: attributes)
+                
+                let u = c.unicodeScalars.first!.value
+                switch u {
+                case 63232: // up
+                    cursor.y -= charSize.height
+                    return .handled
+                case 63233: // down
+                    cursor.y += charSize.height
+                    return .handled
+                case 63234: // left
+                    cursor.x -= self.font.maximumAdvancement.width
+                    return .handled
+                case 63235: // right
+                    cursor.x += self.font.maximumAdvancement.width
+                    return .handled
+                default:
+                    let _: Void = ()
+                }
                 
                 var col = Int((cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero))
                 let row = Int((cursor.y / charSize.height).rounded(.down))
@@ -178,7 +200,7 @@ struct Metal_ToyApp: App {
                 }
                 
                 if  col <= data.count {
-                    text.insert(contentsOf: c, at: text.index(text.startIndex, offsetBy: start+(col-3)))
+                    text.insert(contentsOf: String(c), at: text.index(text.startIndex, offsetBy: start+(col-3)))
                     cursor.x += self.font.maximumAdvancement.width
                 } else {
                     col = data.count
