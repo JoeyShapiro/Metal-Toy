@@ -171,8 +171,23 @@ struct Metal_ToyApp: App {
                 let attributes = [NSAttributedString.Key.font: font]
                 let charSize = ("J" as NSString).size(withAttributes: attributes)
                 
+                var col = Int((cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero))
+                let row = Int((cursor.y / charSize.height).rounded(.down))
+                
+                let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[row]
+                // get the nth occurance of \n
+                var start = 0
+                for i in 0..<row {
+                    start += highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[i].count + 1 - 3
+                }
+                
+                // TODO check for range
                 let u = c.unicodeScalars.first!.value
                 switch u {
+                case 127: // DEL
+                    text.remove(at: text.index(text.startIndex, offsetBy: start+(col-4)))
+                    cursor.x -= self.font.maximumAdvancement.width
+                    return .handled
                 case 63232: // up
                     cursor.y -= charSize.height
                     return .handled
@@ -187,16 +202,6 @@ struct Metal_ToyApp: App {
                     return .handled
                 default:
                     let _: Void = ()
-                }
-                
-                var col = Int((cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero))
-                let row = Int((cursor.y / charSize.height).rounded(.down))
-                
-                let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[row]
-                // get the nth occurance of \n
-                var start = 0
-                for i in 0..<row {
-                    start += highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[i].count + 1 - 3
                 }
                 
                 if  col <= data.count {
