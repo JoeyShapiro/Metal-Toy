@@ -16,10 +16,8 @@ struct Metal_ToyApp: App {
     @Query private var items: [Item]
     @State private var selectedRange: NSRange?
     @State private var lineNumbers: [Int] = []
-    private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
     @FocusState private var focused: Bool
     @State private var highlightedText: NSAttributedString = NSAttributedString()
-    @State private var cursor = CGPoint.zero
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -57,7 +55,7 @@ struct Metal_ToyApp: App {
             } detail: {
                 HStack {
                     ScrollView([.horizontal, .vertical]) {
-                        CodeEditor(text: $text, cursor: $cursor)
+                        CodeEditor(text: $text)
                             .focused($focused)
                     }
                     VStack {

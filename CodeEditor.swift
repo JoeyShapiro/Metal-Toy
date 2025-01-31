@@ -11,7 +11,8 @@ struct CodeEditor: View {
     @Binding var text: String
     @State var highlightedText: NSAttributedString = NSAttributedString()
     private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
-    @Binding var cursor: CGPoint
+    @State var cursor: CGPoint = .zero
+    @State var selectionStart: CGPoint = .zero
     
     var body: some View {
         ZStack {
@@ -25,8 +26,13 @@ struct CodeEditor: View {
                 let attributes = [NSAttributedString.Key.font: font]
                 let charSize = ("J" as NSString).size(withAttributes: attributes)
                 
+                // cursor
                 let path = Rectangle().path(in: CGRect(x: cursor.x, y: cursor.y, width: self.font.maximumAdvancement.width/4, height: charSize.height))
                 context.fill(path, with: .color(.blue))
+                
+                // highlight
+                let selectionPath = Rectangle().path(in: CGRect(x: selectionStart.x, y: selectionStart.y, width: cursor.x - selectionStart.x, height: charSize.height))
+                context.fill(selectionPath, with: .color(.blue.opacity(0.3)))
             }
             Text(AttributedString(highlightedText))
                 .padding(0)
@@ -47,7 +53,7 @@ struct CodeEditor: View {
             
             // convert to character on grid
             var col = (code.location.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
-            let row = (code.location.y / charSize.height).rounded(.down)
+            var row = (code.location.y / charSize.height).rounded(.down)
             
             // get char at that pos
             // doing 2d is needed because each row isnt full
@@ -64,8 +70,12 @@ struct CodeEditor: View {
                 col = CGFloat(data.count)
             }
             
-            
             cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
+            
+            col = (code.startLocation.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
+            row = (code.startLocation.y / charSize.height).rounded(.down)
+            
+            selectionStart = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
         })
         .focusable()
         .focusEffectDisabled()
@@ -164,6 +174,13 @@ struct CodeEditor: View {
         highlightedText = attributedString
     }
 }
+
+// TODO
+//extension CodeEditor {
+//    func font(_ font: Font) -> any View {
+//        self.font(font)  // Since MyCustomText is a View, it inherits the font modifier
+//    }
+//}
 
 // Syntax highlighting support
 extension NSMutableAttributedString {
