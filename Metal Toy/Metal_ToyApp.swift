@@ -35,7 +35,7 @@ struct Metal_ToyApp: App {
     }()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup { // doesnt like any dragging / maybe app needs special veiw
             NavigationSplitView {
                 List {
                     ForEach(items) { item in
@@ -90,8 +90,10 @@ struct Metal_ToyApp: App {
 //                                }
                             }
                             
+//                            CodeEditor(text: $text, font: self.font, cursor: $cursor)
+//                                .focused($focused)
                             Text(AttributedString(highlightedText))
-//                                .textSelection(.enabled)
+//                                .textSelection(.enabled) // cant use with onTapGesture, but doesnt look right // not good anyway
                                 .padding(0)
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
@@ -102,14 +104,14 @@ struct Metal_ToyApp: App {
                                 .onChange(of: text) { old, new in
                                     format()
                                 }
-                                .onTapGesture { code in // includes scroll
+                                .gesture(DragGesture().onChanged { code in // includes scroll
                                     // Getting exact metrics for a specific character
-                                    let attributes = [NSAttributedString.Key.font: font]
+                                    let attributes = [NSAttributedString.Key.font: self.font]
                                     let charSize = ("J" as NSString).size(withAttributes: attributes)
                                     
                                     // convert to character on grid
-                                    var col = (code.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
-                                    let row = (code.y / charSize.height).rounded(.down)
+                                    var col = (code.location.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
+                                    let row = (code.location.y / charSize.height).rounded(.down)
                                     
                                     // get char at that pos
                                     // doing 2d is needed because each row isnt full
@@ -128,7 +130,8 @@ struct Metal_ToyApp: App {
 
                                     
                                     cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
-                                }
+                                })
+                                
                         }
                             
                     }
@@ -157,7 +160,7 @@ struct Metal_ToyApp: App {
                     }
                 }
             }
-            .focusable()
+            .focusable() // dumbass (and others) doesnt like $highlightedText with .gesture
             .focused($focused)
             .focusEffectDisabled()
             .onKeyPress { key in
@@ -211,7 +214,7 @@ struct Metal_ToyApp: App {
                     col = data.count
                 }
                 
-//                cursor.offsetBy(dx: self.font.maximumAdvancement.width)
+                //                cursor.offsetBy(dx: self.font.maximumAdvancement.width)
                 return .handled
             }
 //            .frame(width: 1280, height: 720, alignment: .center)
