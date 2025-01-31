@@ -68,71 +68,8 @@ struct Metal_ToyApp: App {
 //                        }
 //                        
 //                        // Text editor with syntax highlighting
-                        ZStack {
-                            Canvas(
-                                opaque: true,
-                                colorMode: .linear,
-                                rendersAsynchronously: false
-                            ) { context, size in
-                                // best way i can find
-                                // Getting exact metrics for a specific character
-                                let attributes = [NSAttributedString.Key.font: font]
-                                let charSize = ("J" as NSString).size(withAttributes: attributes)
-                                
-                                let path = Rectangle().path(in: CGRect(x: cursor.x, y: cursor.y, width: self.font.maximumAdvancement.width/4, height: charSize.height))
-                                context.fill(path, with: .color(.blue))
-                                
-//                                for x in 0...Int(size.width/self.font.maximumAdvancement.width) {
-//                                    for y in 0...Int(size.height/charSize.height) {
-//                                        let path = Rectangle().path(in: CGRect(x: CGFloat(x)*self.font.maximumAdvancement.width, y: CGFloat(y)*charSize.height, width: self.font.maximumAdvancement.width, height: charSize.height))
-//                                        context.stroke(path, with: .color(.red))
-//                                    }
-//                                }
-                            }
-                            
-//                            CodeEditor(text: $text, font: self.font, cursor: $cursor)
-//                                .focused($focused)
-                            Text(AttributedString(highlightedText))
-//                                .textSelection(.enabled) // cant use with onTapGesture, but doesnt look right // not good anyway
-                                .padding(0)
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(8)
-                                .font(Font(font))
-                                .onAppear() {
-                                    format()
-                                }
-                                .onChange(of: text) { old, new in
-                                    format()
-                                }
-                                .gesture(DragGesture().onChanged { code in // includes scroll
-                                    // Getting exact metrics for a specific character
-                                    let attributes = [NSAttributedString.Key.font: self.font]
-                                    let charSize = ("J" as NSString).size(withAttributes: attributes)
-                                    
-                                    // convert to character on grid
-                                    var col = (code.location.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
-                                    let row = (code.location.y / charSize.height).rounded(.down)
-                                    
-                                    // get char at that pos
-                                    // doing 2d is needed because each row isnt full
-                                    let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
-                                    
-                                    if data.count > Int(col) && Int(col) >= 3 {
-                                        //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
-                                        let ugly_i = data.index(data.startIndex, offsetBy: Int(col))
-                                        let char = data[ugly_i]
-                                        print(char)
-                                    } else if Int(col) < 3 {
-                                        col = 3
-                                    } else {
-                                        col = CGFloat(data.count)
-                                    }
-
-                                    
-                                    cursor = .init(x: col * self.font.maximumAdvancement.width, y: row * charSize.height)
-                                })
-                                
-                        }
+                        CodeEditor(text: $text, cursor: $cursor)
+                            .focused($focused)
                             
                     }
                     VStack {
@@ -159,63 +96,6 @@ struct Metal_ToyApp: App {
                         }.padding(.vertical, 5)
                     }
                 }
-            }
-            .focusable() // dumbass (and others) doesnt like $highlightedText with .gesture
-            .focused($focused)
-            .focusEffectDisabled()
-            .onKeyPress { key in
-                print(key.debugDescription)
-                var c = key.characters.first ?? Character("")
-                if c == "\r" {
-                    c = "\n"
-                }
-                
-                // TODO do only during change or something
-                let attributes = [NSAttributedString.Key.font: font]
-                let charSize = ("J" as NSString).size(withAttributes: attributes)
-                
-                var col = Int((cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero))
-                let row = Int((cursor.y / charSize.height).rounded(.down))
-                
-                let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[row]
-                // get the nth occurance of \n
-                var start = 0
-                for i in 0..<row {
-                    start += highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[i].count + 1 - 3
-                }
-                
-                // TODO check for range
-                let u = c.unicodeScalars.first!.value
-                switch u {
-                case 127: // DEL
-                    text.remove(at: text.index(text.startIndex, offsetBy: start+(col-4)))
-                    cursor.x -= self.font.maximumAdvancement.width
-                    return .handled
-                case 63232: // up
-                    cursor.y -= charSize.height
-                    return .handled
-                case 63233: // down
-                    cursor.y += charSize.height
-                    return .handled
-                case 63234: // left
-                    cursor.x -= self.font.maximumAdvancement.width
-                    return .handled
-                case 63235: // right
-                    cursor.x += self.font.maximumAdvancement.width
-                    return .handled
-                default:
-                    let _: Void = ()
-                }
-                
-                if  col <= data.count {
-                    text.insert(contentsOf: String(c), at: text.index(text.startIndex, offsetBy: start+(col-3)))
-                    cursor.x += self.font.maximumAdvancement.width
-                } else {
-                    col = data.count
-                }
-                
-                //                cursor.offsetBy(dx: self.font.maximumAdvancement.width)
-                return .handled
             }
 //            .frame(width: 1280, height: 720, alignment: .center)
         }
