@@ -6,13 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		CDBD2EB72D49D3CB00574E71 /* CodeEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBD2EB62D49D3CB00574E71 /* CodeEditor.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		CD55B87B2CE2F46800A4B0D8 /* Metal Toy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Metal Toy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CDBD2EB62D49D3CB00574E71 /* CodeEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,7 +32,6 @@
 		CD55B8722CE2F46800A4B0D8 = {
 			isa = PBXGroup;
 			children = (
-				CDBD2EB62D49D3CB00574E71 /* CodeEditor.swift */,
 				CD55B87D2CE2F46800A4B0D8 /* Metal Toy */,
 				CD55B87C2CE2F46800A4B0D8 /* Products */,
 			);
@@ -125,7 +119,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CDBD2EB72D49D3CB00574E71 /* CodeEditor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
