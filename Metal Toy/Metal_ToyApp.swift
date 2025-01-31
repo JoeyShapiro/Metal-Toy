@@ -18,6 +18,7 @@ struct Metal_ToyApp: App {
     @State private var lineNumbers: [Int] = []
     @FocusState private var focused: Bool
     @State private var highlightedText: NSAttributedString = NSAttributedString()
+    private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -56,6 +57,7 @@ struct Metal_ToyApp: App {
                 HStack {
                     ScrollView([.horizontal, .vertical]) {
                         CodeEditor(text: $text)
+                            .font(font)
                             .focused($focused)
                     }
                     VStack {

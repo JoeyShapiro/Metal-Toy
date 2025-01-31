@@ -10,9 +10,11 @@ import SwiftUI
 struct CodeEditor: View {
     @Binding var text: String
     @State var highlightedText: NSAttributedString = NSAttributedString()
-    private let font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
+    private var font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
     @State var cursor: CGPoint = .zero
     @State var selectionStart: CGPoint = .zero
+    // slow, but better
+    private var charSize: CGSize = getCharSize(NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0)))
     
     var body: some View {
         ZStack {
@@ -21,11 +23,6 @@ struct CodeEditor: View {
                 colorMode: .linear,
                 rendersAsynchronously: false
             ) { context, size in
-                // best way i can find
-                // Getting exact metrics for a specific character
-                let attributes = [NSAttributedString.Key.font: font]
-                let charSize = ("J" as NSString).size(withAttributes: attributes)
-                
                 // cursor
                 let path = Rectangle().path(in: CGRect(x: cursor.x, y: cursor.y, width: self.font.maximumAdvancement.width/4, height: charSize.height))
                 context.fill(path, with: .color(.blue))
@@ -47,10 +44,6 @@ struct CodeEditor: View {
                 }
         }
         .gesture(DragGesture(minimumDistance: 0).onChanged { code in // includes scroll
-            // Getting exact metrics for a specific character
-            let attributes = [NSAttributedString.Key.font: self.font]
-            let charSize = ("J" as NSString).size(withAttributes: attributes)
-            
             // convert to character on grid
             var col = (code.location.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero)
             var row = (code.location.y / charSize.height).rounded(.down)
@@ -59,14 +52,9 @@ struct CodeEditor: View {
             // doing 2d is needed because each row isnt full
             let data = highlightedText.string.split(separator: "\n", omittingEmptySubsequences: false)[Int(row)]
             
-            if data.count > Int(col) && Int(col) >= 3 {
-                //let ugly_i = data.count > Int(col) ? data.index(data.startIndex, offsetBy: Int(col)) : data.index(data.endIndex, offsetBy: -1)
-                let ugly_i = data.index(data.startIndex, offsetBy: Int(col))
-                let char = data[ugly_i]
-                print(char)
-            } else if Int(col) < 3 {
+            if Int(col) < 3 {
                 col = 3
-            } else {
+            } else if Int(col) > data.count {
                 col = CGFloat(data.count)
             }
             
@@ -85,10 +73,6 @@ struct CodeEditor: View {
             if c == "\r" {
                 c = "\n"
             }
-            
-            // TODO do only during change or something
-            let attributes = [NSAttributedString.Key.font: font]
-            let charSize = ("J" as NSString).size(withAttributes: attributes)
             
             var col = Int((cursor.x / self.font.maximumAdvancement.width).rounded(.toNearestOrAwayFromZero))
             let row = Int((cursor.y / charSize.height).rounded(.down))
@@ -135,6 +119,13 @@ struct CodeEditor: View {
         }
     }
     
+    public mutating func font(_ font: NSFont) -> some View {
+        self.font = font
+        self.charSize = getCharSize(font)
+        
+        return self
+    }
+    
     private func format() {
         // Get the total number of lines to determine padding width
         // this bit me so many times. not sure why, i thought bug
@@ -175,12 +166,10 @@ struct CodeEditor: View {
     }
 }
 
-// TODO
-//extension CodeEditor {
-//    func font(_ font: Font) -> any View {
-//        self.font(font)  // Since MyCustomText is a View, it inherits the font modifier
-//    }
-//}
+private func getCharSize(_ font: NSFont) -> CGSize {
+    let attributes = [NSAttributedString.Key.font: font]
+    return ("J" as NSString).size(withAttributes: attributes)
+}
 
 // Syntax highlighting support
 extension NSMutableAttributedString {
