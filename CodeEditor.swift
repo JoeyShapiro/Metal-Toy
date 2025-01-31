@@ -27,19 +27,8 @@ struct CodeEditor: View {
                 
                 let path = Rectangle().path(in: CGRect(x: cursor.x, y: cursor.y, width: self.font.maximumAdvancement.width/4, height: charSize.height))
                 context.fill(path, with: .color(.blue))
-                
-                //                                for x in 0...Int(size.width/self.font.maximumAdvancement.width) {
-                //                                    for y in 0...Int(size.height/charSize.height) {
-                //                                        let path = Rectangle().path(in: CGRect(x: CGFloat(x)*self.font.maximumAdvancement.width, y: CGFloat(y)*charSize.height, width: self.font.maximumAdvancement.width, height: charSize.height))
-                //                                        context.stroke(path, with: .color(.red))
-                //                                    }
-                //                                }
             }
-            
-            //                            CodeEditor(text: $text, font: self.font, cursor: $cursor)
-            //                                .focused($focused)
             Text(AttributedString(highlightedText))
-            //                                .textSelection(.enabled) // cant use with onTapGesture, but doesnt look right // not good anyway
                 .padding(0)
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
@@ -173,5 +162,18 @@ struct CodeEditor: View {
         attributedString.highlight(pattern: "//.*$", with: .systemGreen)
         
         highlightedText = attributedString
+    }
+}
+
+// Syntax highlighting support
+extension NSMutableAttributedString {
+    func highlight(pattern: String, with color: NSColor) {
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(location: 0, length: self.length)
+        regex?.enumerateMatches(in: self.string, range: range) { match, _, _ in
+            if let matchRange = match?.range {
+                self.addAttribute(.foregroundColor, value: color, range: matchRange)
+            }
+        }
     }
 }

@@ -57,20 +57,8 @@ struct Metal_ToyApp: App {
             } detail: {
                 HStack {
                     ScrollView([.horizontal, .vertical]) {
-                        // Line numbers
-//                        VStack(alignment: .trailing) {
-//                            ForEach(lineNumbers, id: \.self) { number in
-//                                Text("\(number)")
-//                                    .font(font)
-//                                    .foregroundColor(.gray)
-//                                    .padding(.horizontal, 8)
-//                            }
-//                        }
-//                        
-//                        // Text editor with syntax highlighting
                         CodeEditor(text: $text, cursor: $cursor)
                             .focused($focused)
-                            
                     }
                     VStack {
                         MetalView(source: $text)
@@ -101,45 +89,6 @@ struct Metal_ToyApp: App {
         }
         .modelContainer(sharedModelContainer)
     }
-    
-    private func format() {
-        // Get the total number of lines to determine padding width
-        // this bit me so many times. not sure why, i thought bug
-        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-        // Calculate the width needed for the largest line number
-        let n = String(lines.count).count
-        
-        let formatted = lines
-            .enumerated()
-            .map { (i, e) in
-                "\(String(format: "%\(n)d", i + 1)) \(e)"
-            }
-            .joined(separator: "\n")
-        
-        let attributedString = NSMutableAttributedString(string: formatted)
-        
-        // Metal keywords
-        var keywords = "using|namespace|struct|bool|constant|vertex|return"
-        attributedString.highlight(pattern: "\\b(\(keywords))\\b", with: .systemPink)
-        
-        // Metal Processors
-        keywords = "include"
-        attributedString.highlight(pattern: "#(\(keywords))\\b", with: .systemOrange)
-        
-        // String literals
-        attributedString.highlight(pattern: "\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"", with: .systemRed)
-        
-        // Numbers
-        attributedString.highlight(pattern: "\\b\\d+\\.?\\d*\\b", with: .systemYellow)
-        
-        // line numbers
-        attributedString.highlight(pattern: "(^|\\n)\\s*\\d+", with: .systemGray)
-        
-        // Comments
-        attributedString.highlight(pattern: "//.*$", with: .systemGreen)
-        
-        highlightedText = attributedString
-    }
 }
 
 extension Bundle {
@@ -148,18 +97,5 @@ extension Bundle {
             return nil
         }
         return try? String(contentsOfFile: path, encoding: .utf8)
-    }
-}
-
-// Syntax highlighting support
-extension NSMutableAttributedString {
-    func highlight(pattern: String, with color: NSColor) {
-        let regex = try? NSRegularExpression(pattern: pattern)
-        let range = NSRange(location: 0, length: self.length)
-        regex?.enumerateMatches(in: self.string, range: range) { match, _, _ in
-            if let matchRange = match?.range {
-                self.addAttribute(.foregroundColor, value: color, range: matchRange)
-            }
-        }
     }
 }
