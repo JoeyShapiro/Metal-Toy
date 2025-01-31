@@ -12,7 +12,7 @@ struct CodeEditor: View {
     @State var highlightedText: NSAttributedString = NSAttributedString()
     @Binding var font: NSFont
     @State var cursor: CGPoint = .zero
-    @State var selectionStart: CGPoint = .zero
+    @State var selectionStart: CGPoint? = nil
     @State var charSize: CGSize = .zero
     
     var body: some View {
@@ -27,8 +27,10 @@ struct CodeEditor: View {
                 context.fill(path, with: .color(.blue))
                 
                 // highlight
-                let selectionPath = Rectangle().path(in: CGRect(x: selectionStart.x, y: selectionStart.y, width: cursor.x - selectionStart.x, height: charSize.height))
-                context.fill(selectionPath, with: .color(.blue.opacity(0.3)))
+                if let selectionStart = self.selectionStart {
+                    let selectionPath = Rectangle().path(in: CGRect(x: selectionStart.x, y: selectionStart.y, width: cursor.x - selectionStart.x, height: charSize.height))
+                    context.fill(selectionPath, with: .color(.blue.opacity(0.3)))
+                }
             }
             Text(AttributedString(highlightedText))
                 .padding(0)
@@ -38,6 +40,7 @@ struct CodeEditor: View {
                 .onAppear() {
                     self.charSize = getCharSize() // hack / fun police'd
                     format()
+                    cursor = .init(x: 3 * self.font.maximumAdvancement.width, y: 0)
                 }
                 .onChange(of: text) { old, new in
                     format()
