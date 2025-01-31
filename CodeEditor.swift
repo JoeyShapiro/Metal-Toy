@@ -10,11 +10,10 @@ import SwiftUI
 struct CodeEditor: View {
     @Binding var text: String
     @State var highlightedText: NSAttributedString = NSAttributedString()
-    private var font = NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0))
+    @Binding var font: NSFont
     @State var cursor: CGPoint = .zero
     @State var selectionStart: CGPoint = .zero
-    // slow, but better
-    private var charSize: CGSize = getCharSize(NSFont.monospacedSystemFont(ofSize: 12, weight: NSFont.Weight(rawValue: 0.0)))
+    @State var charSize: CGSize = .zero
     
     var body: some View {
         ZStack {
@@ -37,6 +36,7 @@ struct CodeEditor: View {
                 .cornerRadius(8)
                 .font(Font(font))
                 .onAppear() {
+                    self.charSize = getCharSize() // hack / fun police'd
                     format()
                 }
                 .onChange(of: text) { old, new in
@@ -117,13 +117,14 @@ struct CodeEditor: View {
             //                cursor.offsetBy(dx: self.font.maximumAdvancement.width)
             return .handled
         }
+        .onChange(of: font) {
+            self.charSize = self.getCharSize()
+        }
     }
     
-    public mutating func font(_ font: NSFont) -> some View {
-        self.font = font
-        self.charSize = getCharSize(font)
-        
-        return self
+    private func getCharSize() -> CGSize {
+        let attributes = [NSAttributedString.Key.font: font]
+        return ("J" as NSString).size(withAttributes: attributes)
     }
     
     private func format() {
@@ -166,10 +167,6 @@ struct CodeEditor: View {
     }
 }
 
-private func getCharSize(_ font: NSFont) -> CGSize {
-    let attributes = [NSAttributedString.Key.font: font]
-    return ("J" as NSString).size(withAttributes: attributes)
-}
 
 // Syntax highlighting support
 extension NSMutableAttributedString {
